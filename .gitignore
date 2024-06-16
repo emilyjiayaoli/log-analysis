@@ -1,3 +1,4 @@
 storage_old/
 data_old/
 storage/
+.env

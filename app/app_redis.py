@@ -32,6 +32,9 @@ import ast
 ## !docker start -a redis-stack
 ############################################
 
+openai_api_key = os.getenv('OPENAI_API_KEY')
+redis_host = os.getenv('REDIS_HOST')
+redis_port = os.getenv('REDIS_PORT')
 
 def set_up(clear_cache=False, data_path="data"):
     
@@ -60,10 +63,11 @@ def set_up(clear_cache=False, data_path="data"):
             ],
         }
     )
+    st.write("Connecting to Redis...", f"redis://{redis_host}:{redis_port}")
     # e: define vector store given schema
     vector_store = RedisVectorStore(
         schema=custom_schema,
-        redis_url="redis://localhost:6379",
+        redis_url=f"redis://{redis_host}:{redis_port}",
     )
     # Optional: clear vector store if exists & clear_cache is True
     if vector_store.index_exists():
@@ -75,11 +79,11 @@ def set_up(clear_cache=False, data_path="data"):
 
     # Set up the ingestion cache layer
     cache = IngestionCache(
-        cache=RedisCache.from_host_and_port("localhost", 6379),
+        cache=RedisCache.from_host_and_port(redis_host, redis_port),
         collection="redis_cache",
     )
     docstore = RedisDocumentStore.from_host_and_port(
-        "localhost", 6379, namespace="document_store"
+        redis_host, redis_port, namespace="document_store"
     )
     pipeline = IngestionPipeline(
         transformations=[
