@@ -269,6 +269,8 @@ if prompt := st.chat_input("What is this documentation about? Explain in detail?
     # Assuming response_obj is your Response object
     response_str = response.response
 
+    print("Response:", response_str)
+
     # Parse the string representation of the dictionary
     response_dict = ast.literal_eval(response_str)
 
