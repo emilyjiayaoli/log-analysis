@@ -33,19 +33,14 @@ import asyncio
 ## !docker start -a redis-stack
 ############################################
 
-# openai_api_key = os.getenv('OPENAI_API_KEY')
-# redis_host = os.getenv('REMOTE_CACHE_HOST')
-# redis_port = os.getenv('REMOTE_CACHE_PORT')
+openai_api_key = os.getenv('OPENAI_API_KEY')
+redis_host = os.getenv('REMOTE_CACHE_HOST')
+redis_port = os.getenv('REMOTE_CACHE_PORT')
 
-OPENAI_API_KEY='sk-proj-ukOwNSt7ZeeaLA7TZwvdT3BlbkFJHqVkxB0L8f0QLpxwRkG9'
+OPENAI_API_KEY = openai_api_key
 
-REMOTE_CACHE_HOST='clustercfg.logan.ak3paw.use1.cache.amazonaws.com'
-REMOTE_CACHE_PORT=6379
-# REMOTE_CACHE_HOST='default:p1LrbfZYOi5etbKQ0PKeNEfpOOUk2z7N@redis-13274.c241.us-east-1-4.ec2.redns.redis-cloud.com'
-# REMOTE_CACHE_PORT=13274 #6379
-
-redis_host = REMOTE_CACHE_HOST
-redis_port = REMOTE_CACHE_PORT
+# redis_host = REMOTE_CACHE_HOST
+# redis_port = REMOTE_CACHE_PORT
 
 def set_up(clear_cache=False, data_path="data"):
     
