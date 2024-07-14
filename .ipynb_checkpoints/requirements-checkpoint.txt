@@ -1,7 +1,0 @@
-llama_index
-llama-index-storage-docstore-redis
-llama-index-vector-stores-redis
-llama-index-embeddings-huggingface
-llama-index-readers-google
-docx2txt
-langchain

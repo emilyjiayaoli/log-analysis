@@ -24,6 +24,7 @@ from llama_index.llms.openai import OpenAI
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 
 import ast
+import asyncio
 
 ############################################
 ## if creating a new container
@@ -32,9 +33,19 @@ import ast
 ## !docker start -a redis-stack
 ############################################
 
-openai_api_key = os.getenv('OPENAI_API_KEY')
-redis_host = os.getenv('REDIS_HOST')
-redis_port = os.getenv('REDIS_PORT')
+# openai_api_key = os.getenv('OPENAI_API_KEY')
+# redis_host = os.getenv('REMOTE_CACHE_HOST')
+# redis_port = os.getenv('REMOTE_CACHE_PORT')
+
+OPENAI_API_KEY='sk-proj-ukOwNSt7ZeeaLA7TZwvdT3BlbkFJHqVkxB0L8f0QLpxwRkG9'
+
+REMOTE_CACHE_HOST='clustercfg.logan.ak3paw.use1.cache.amazonaws.com'
+REMOTE_CACHE_PORT=6379
+# REMOTE_CACHE_HOST='default:p1LrbfZYOi5etbKQ0PKeNEfpOOUk2z7N@redis-13274.c241.us-east-1-4.ec2.redns.redis-cloud.com'
+# REMOTE_CACHE_PORT=13274 #6379
+
+redis_host = REMOTE_CACHE_HOST
+redis_port = REMOTE_CACHE_PORT
 
 def set_up(clear_cache=False, data_path="data"):
     
@@ -63,12 +74,13 @@ def set_up(clear_cache=False, data_path="data"):
             ],
         }
     )
-    st.write("Connecting to Redis...", f"redis://{redis_host}:{redis_port}")
+    print("Setting up vector store...")
     # e: define vector store given schema
     vector_store = RedisVectorStore(
         schema=custom_schema,
         redis_url=f"redis://{redis_host}:{redis_port}",
     )
+    print("Creating index...")
     # Optional: clear vector store if exists & clear_cache is True
     if vector_store.index_exists():
         if clear_cache:
@@ -77,14 +89,29 @@ def set_up(clear_cache=False, data_path="data"):
     else:
         vector_store.create_index()
 
+    print("Setting up ingestion pipeline...")
     # Set up the ingestion cache layer
-    cache = IngestionCache(
-        cache=RedisCache.from_host_and_port(redis_host, redis_port),
-        collection="redis_cache",
-    )
-    docstore = RedisDocumentStore.from_host_and_port(
-        redis_host, redis_port, namespace="document_store"
-    )
+    async def setup_cache():
+        cache = IngestionCache(
+            cache=RedisCache.from_host_and_port(redis_host, redis_port),
+            collection="redis_cache",
+        )
+        return cache
+    
+    cache = asyncio.run(setup_cache())
+    # Set up the document store
+    print("Setting up document store...")
+
+    async def setup_docstore():
+        docstore = RedisDocumentStore.from_host_and_port(
+            redis_host, redis_port, namespace="document_store"
+        )
+        return docstore
+    
+    docstore = asyncio.run(setup_docstore())
+
+    print("Setting up ingestion pipeline...")
+
     pipeline = IngestionPipeline(
         transformations=[
             SentenceSplitter(),
@@ -95,9 +122,13 @@ def set_up(clear_cache=False, data_path="data"):
         cache=cache,
         docstore_strategy=DocstoreStrategy.UPSERTS,
     )
+
+    print("Setting up index...")
     index = VectorStoreIndex.from_vector_store(
         pipeline.vector_store, embed_model=embed_model
     )
+
+    print("Setting up data loader...")
     loader = SimpleDirectoryReader(data_path)
 
     return pipeline, index, loader, embed_model, vector_store, cache, docstore
@@ -170,6 +201,7 @@ with st.status("Initializing", expanded=True) as status:
             st.session_state.docstore = docstore
 
             output_parser = get_output_parser()
+            print("OpenAI API Key", OPENAI_API_KEY)
             llm = OpenAI(temperature=0.1, model="gpt-4o", output_parser= output_parser)
             query_engine = index.as_query_engine(llm=llm) #, streaming=True)
 
