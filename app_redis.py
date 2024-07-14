@@ -255,14 +255,14 @@ with st.expander("Prompt Editor", expanded=False):
             mime="text/plain"
         )
 
-    print("Prompt:", prompt)
-
+    
 if prompt := st.chat_input("What is this documentation about? Explain in detail?"):
     # st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
     
     with st.chat_message("assistant"):
+        print("Prompt:", prompt)
         response = st.session_state.query_engine.query(prompt)
         # st.markdown(response)
 
